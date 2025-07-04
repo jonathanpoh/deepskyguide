@@ -1,4 +1,7 @@
 {
+  "name": "@jonathanpoh/deepskyguide",
+  "version": "1.0.0",
+  "description": "A useful tool for astrophotography planning of deep-sky objects.",
   "tasks": {
     "start": "deno run --allow-env --allow-read --allow-net app.ts"
   }

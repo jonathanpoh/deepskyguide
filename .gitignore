@@ -1,0 +1,8 @@
+# Dependencies
+/node_modules
+
+# Compiled JavaScript files
+/dist
+
+# Environment variables - DO NOT COMMIT THIS FILE
+.env

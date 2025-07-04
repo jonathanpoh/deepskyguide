@@ -1,8 +1,5 @@
-import 'dotenv/config'; // Load environment variables from .env file
-import fetch from 'node-fetch';
-import * as fs from 'fs';
-import * as path from 'path';
-import type { OpenRouterResponse } from './types';
+import { load } from 'https://deno.land/std@0.224.0/dotenv/mod.ts';
+import type { OpenRouterResponse } from './types.ts';
 
 /**
  * Fetches a completion from the OpenRouter AI API.
@@ -11,7 +8,9 @@ import type { OpenRouterResponse } from './types';
  * @returns The AI's response content as a string, or undefined on failure.
  */
 async function getAiCompletion(prompt: string, systemPrompt: string): Promise<string | undefined> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  // In Deno, you can load from a file or use Deno.env
+  const env = await load();
+  const apiKey = env['OPENROUTER_API_KEY'] ?? Deno.env.get('OPENROUTER_API_KEY');
 
   if (!apiKey) {
     console.error("Error: OPENROUTER_API_KEY environment variable is not set.");
@@ -21,7 +20,6 @@ async function getAiCompletion(prompt: string, systemPrompt: string): Promise<st
   const apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
 
   try {
-    // 2. Use await to handle the asynchronous response cleanly.
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -29,8 +27,7 @@ async function getAiCompletion(prompt: string, systemPrompt: string): Promise<st
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-001',
-        usage: { include: true },
+        model: 'google/gemini-2.0-flash-001', // The 'usage' parameter is not supported by this model.
         messages: [
           { role: 'system', content: systemPrompt },
           {
@@ -41,7 +38,6 @@ async function getAiCompletion(prompt: string, systemPrompt: string): Promise<st
       }),
     });
 
-    // 3. Add error handling for bad API responses.
     if (!response.ok) {
       const errorBody = await response.text();
       throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
@@ -49,9 +45,8 @@ async function getAiCompletion(prompt: string, systemPrompt: string): Promise<st
 
     const data = (await response.json()) as OpenRouterResponse;
     // For debugging, you can log the full response object like this:
-    console.log('Full API Response:', JSON.stringify(data, null, 2));
-    // const messageContent = data.choices[0]?.message?.content;
-    const messageContent = ' ';
+    // console.log('Full API Response:', JSON.stringify(data, null, 2));
+    const messageContent = data.choices[0]?.message?.content;
 
     if (!messageContent) {
       console.error('Could not find message content in the AI response.');
@@ -70,8 +65,11 @@ async function getAiCompletion(prompt: string, systemPrompt: string): Promise<st
  * Main execution function.
  */
 async function main() {
-  const systemPrompt = fs.readFileSync(path.join(__dirname, 'system_prompt.md'), 'utf-8');
-  const userPrompt = 'What is the Andromeda Galaxy?';
+  // Deno uses `import.meta.url` to resolve paths relative to the current file.
+  const systemPromptPath = new URL('system_prompt.md', import.meta.url);
+  const systemPrompt = await Deno.readTextFile(systemPromptPath);
+
+  const userPrompt = 'What is the Andromeda Galaxy?'; // Or read from Deno.args
 
   console.log(`> Asking AI: "${userPrompt}"\n`);
   const responseContent = await getAiCompletion(userPrompt, systemPrompt);

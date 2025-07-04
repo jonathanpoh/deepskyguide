@@ -1,0 +1,5 @@
+{
+  "tasks": {
+    "start": "deno run --allow-env --allow-read --allow-net app.ts"
+  }
+}
